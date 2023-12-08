@@ -39,7 +39,7 @@ public class EventHubTriggeredFn
             }
             else
             {
-                _logger.LogInformation("Skipping this event type...");
+                _logger.LogWarning("Skipping this event type...");
             }
         }
     }
