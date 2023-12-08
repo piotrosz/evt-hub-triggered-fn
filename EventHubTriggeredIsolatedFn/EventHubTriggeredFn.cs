@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EventHubTriggeredIsolatedFn;
 
-public sealed class EventHubTriggeredFn
+public class EventHubTriggeredFn
 {
     private readonly ILogger<EventHubTriggeredFn> _logger;
 
