@@ -33,6 +33,7 @@ public class EventHubTriggeredFn
 
             if (eventType == "add")
             {
+                _logger.LogWarning("Handling event {eventType}...", eventType);
                 _logger.LogInformation("Handling event...");
                 _logger.LogInformation("Event Body: {body}", @event.Body);
                 _logger.LogInformation("Event Content-Type: {contentType}", @event.ContentType);
