@@ -14,7 +14,7 @@ public class EventHubTriggeredFn
     }
 
     [Function(nameof(EventHubTriggeredFn))]
-    public void Run([EventHubTrigger("test-evhb", Connection = "EventHubConnectionString")] EventData[] events)
+    public void Run([EventHubTrigger("test-evhb", Connection = "EventHubConnectionString" /*, ConsumerGroup = "Consumer1" */)] EventData[] events)
     {
         foreach (EventData @event in events)
         {

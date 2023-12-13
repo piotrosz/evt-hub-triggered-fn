@@ -1,0 +1,1613 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namespaces_evthubtest_name": {
+            "defaultValue": "evthubtest",
+            "type": "String"
+        },
+        "sites_evt_hub_triggered_fna_name": {
+            "defaultValue": "evt-hub-triggered-fna",
+            "type": "String"
+        },
+        "serverfarms_evt_hub_fna_appplan_name": {
+            "defaultValue": "evt-hub-fna-appplan",
+            "type": "String"
+        },
+        "storageAccounts_evthubfnstorage_name": {
+            "defaultValue": "evthubfnstorage",
+            "type": "String"
+        },
+        "components_evt_hub_triggered_fna_name": {
+            "defaultValue": "evt-hub-triggered-fna",
+            "type": "String"
+        },
+        "smartdetectoralertrules_failure_anomalies___evt_hub_triggered_fna_name": {
+            "defaultValue": "failure anomalies - evt-hub-triggered-fna",
+            "type": "String"
+        },
+        "actiongroups_application_insights_smart_detection_externalid": {
+            "defaultValue": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/nowyswiatfn/providers/microsoft.insights/actiongroups/application insights smart detection",
+            "type": "String"
+        },
+        "workspaces_DefaultWorkspace_311d0bf6_7b5c_40ae_880d_a81a7407ebf1_PLC_externalid": {
+            "defaultValue": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/DefaultResourceGroup-PLC/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-311d0bf6-7b5c-40ae-880d-a81a7407ebf1-PLC",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.EventHub/namespaces",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[parameters('namespaces_evthubtest_name')]",
+            "location": "polandcentral",
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard",
+                "capacity": 1
+            },
+            "properties": {
+                "minimumTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false,
+                "privateEndpointConnections": [],
+                "zoneRedundant": true,
+                "isAutoInflateEnabled": false,
+                "maximumThroughputUnits": 0,
+                "kafkaEnabled": true
+            }
+        },
+        {
+            "type": "microsoft.insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[parameters('components_evt_hub_triggered_fna_name')]",
+            "location": "polandcentral",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Redfield",
+                "Request_Source": "IbizaWebAppExtensionCreate",
+                "RetentionInDays": 90,
+                "WorkspaceResourceId": "[parameters('workspaces_DefaultWorkspace_311d0bf6_7b5c_40ae_880d_a81a7407ebf1_PLC_externalid')]",
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[parameters('storageAccounts_evthubfnstorage_name')]",
+            "location": "polandcentral",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "Storage",
+            "properties": {
+                "defaultToOAuthAuthentication": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2022-09-01",
+            "name": "[parameters('serverfarms_evt_hub_fna_appplan_name')]",
+            "location": "Poland Central",
+            "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S",
+                "capacity": 1
+            },
+            "kind": "app",
+            "properties": {
+                "perSiteScaling": false,
+                "elasticScaleEnabled": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0,
+                "zoneRedundant": false
+            }
+        },
+        {
+            "type": "microsoft.alertsmanagement/smartdetectoralertrules",
+            "apiVersion": "2021-04-01",
+            "name": "[parameters('smartdetectoralertrules_failure_anomalies___evt_hub_triggered_fna_name')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "description": "Failure Anomalies notifies you of an unusual rise in the rate of failed HTTP requests or dependency calls.",
+                "state": "Enabled",
+                "severity": "Sev3",
+                "frequency": "PT1M",
+                "detector": {
+                    "id": "FailureAnomaliesDetector"
+                },
+                "scope": [
+                    "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+                ],
+                "actionGroups": {
+                    "groupIds": [
+                        "[parameters('actiongroups_application_insights_smart_detection_externalid')]"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/authorizationrules",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/RootManageSharedAccessKey')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Listen",
+                    "Manage",
+                    "Send"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/authorizationrules",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/sendpolicy')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Send"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/test-evhb')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {
+                "retentionDescription": {
+                    "cleanupPolicy": "Delete",
+                    "retentionTimeInHours": 1
+                },
+                "messageRetentionInDays": 1,
+                "partitionCount": 2,
+                "status": "Active"
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/networkrulesets",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/default')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {
+                "publicNetworkAccess": "Enabled",
+                "defaultAction": "Allow",
+                "virtualNetworkRules": [],
+                "ipRules": [],
+                "trustedServiceAccessEnabled": false
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/degradationindependencyduration')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "degradationindependencyduration",
+                    "DisplayName": "Degradation in dependency duration",
+                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/degradationinserverresponsetime')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "degradationinserverresponsetime",
+                    "DisplayName": "Degradation in server response time",
+                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/digestMailConfiguration')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "digestMailConfiguration",
+                    "DisplayName": "Digest Mail Configuration",
+                    "Description": "This rule describes the digest mail preferences",
+                    "HelpUrl": "www.homail.com",
+                    "IsHidden": true,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_billingdatavolumedailyspikeextension')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_billingdatavolumedailyspikeextension",
+                    "DisplayName": "Abnormal rise in daily data volume (preview)",
+                    "Description": "This detection rule automatically analyzes the billing data generated by your application, and can warn you about an unusual increase in your application's billing costs",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/billing-data-volume-daily-spike.md",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_canaryextension')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_canaryextension",
+                    "DisplayName": "Canary extension",
+                    "Description": "Canary extension",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/",
+                    "IsHidden": true,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_exceptionchangeextension')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_exceptionchangeextension",
+                    "DisplayName": "Abnormal rise in exception volume (preview)",
+                    "Description": "This detection rule automatically analyzes the exceptions thrown in your application, and can warn you about unusual patterns in your exception telemetry.",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/abnormal-rise-in-exception-volume.md",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_memoryleakextension')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_memoryleakextension",
+                    "DisplayName": "Potential memory leak detected (preview)",
+                    "Description": "This detection rule automatically analyzes the memory consumption of each process in your application, and can warn you about potential memory leaks or increased memory consumption.",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/memory-leak.md",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_securityextensionspackage')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_securityextensionspackage",
+                    "DisplayName": "Potential security issue detected (preview)",
+                    "Description": "This detection rule automatically analyzes the telemetry generated by your application and detects potential security issues.",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/application-security-detection-pack.md",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/extension_traceseveritydetector')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "extension_traceseveritydetector",
+                    "DisplayName": "Degradation in trace severity ratio (preview)",
+                    "Description": "This detection rule automatically analyzes the trace logs emitted from your application, and can warn you about unusual patterns in the severity of your trace telemetry.",
+                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/degradation-in-trace-severity-ratio.md",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/longdependencyduration')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "longdependencyduration",
+                    "DisplayName": "Long dependency duration",
+                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/migrationToAlertRulesCompleted')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "migrationToAlertRulesCompleted",
+                    "DisplayName": "Migration To Alert Rules Completed",
+                    "Description": "A configuration that controls the migration state of Smart Detection to Smart Alerts",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": true,
+                    "IsEnabledByDefault": false,
+                    "IsInPreview": true,
+                    "SupportsEmailNotifications": false
+                },
+                "enabled": false,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/slowpageloadtime')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "slowpageloadtime",
+                    "DisplayName": "Slow page load time",
+                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
+            "apiVersion": "2018-05-01-preview",
+            "name": "[concat(parameters('components_evt_hub_triggered_fna_name'), '/slowserverresponsetime')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('microsoft.insights/components', parameters('components_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "ruleDefinitions": {
+                    "Name": "slowserverresponsetime",
+                    "DisplayName": "Slow server response time",
+                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
+                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
+                    "IsHidden": false,
+                    "IsEnabledByDefault": true,
+                    "IsInPreview": false,
+                    "SupportsEmailNotifications": true
+                },
+                "enabled": true,
+                "sendEmailsToSubscriptionOwners": true,
+                "customEmails": []
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "allowPermanentDelete": false,
+                    "enabled": false
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "protocolSettings": {
+                    "smb": {}
+                },
+                "cors": {
+                    "corsRules": []
+                },
+                "shareDeleteRetentionPolicy": {
+                    "enabled": true,
+                    "days": 7
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/queueServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/tableServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[parameters('sites_evt_hub_triggered_fna_name')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_evt_hub_fna_appplan_name'))]"
+            ],
+            "tags": {
+                "hidden-link: /app-insights-resource-id": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/evt-hub-test-rg/providers/microsoft.insights/components/evt-hub-triggered-fna",
+                "hidden-link: /app-insights-instrumentation-key": "be40cb1a-473e-4caf-99bc-57597089e435",
+                "hidden-link: /app-insights-conn-string": "InstrumentationKey=be40cb1a-473e-4caf-99bc-57597089e435;IngestionEndpoint=https://polandcentral-0.in.applicationinsights.azure.com/;LiveEndpoint=https://polandcentral.livediagnostics.monitor.azure.com/"
+            },
+            "kind": "functionapp",
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_evt_hub_fna_appplan_name'))]",
+                "reserved": false,
+                "isXenon": false,
+                "hyperV": false,
+                "vnetRouteAllEnabled": false,
+                "vnetImagePullEnabled": false,
+                "vnetContentShareEnabled": false,
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": true,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "customDomainVerificationId": "35A04E029985185CAB8098ADBE3EE64B7AC3CF49002394A0563AEC9E4426A82A",
+                "containerSize": 1536,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/ftp')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "tags": {
+                "hidden-link: /app-insights-resource-id": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/evt-hub-test-rg/providers/microsoft.insights/components/evt-hub-triggered-fna",
+                "hidden-link: /app-insights-instrumentation-key": "be40cb1a-473e-4caf-99bc-57597089e435",
+                "hidden-link: /app-insights-conn-string": "InstrumentationKey=be40cb1a-473e-4caf-99bc-57597089e435;IngestionEndpoint=https://polandcentral-0.in.applicationinsights.azure.com/;LiveEndpoint=https://polandcentral.livediagnostics.monitor.azure.com/"
+            },
+            "properties": {
+                "allow": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/scm')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "tags": {
+                "hidden-link: /app-insights-resource-id": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/evt-hub-test-rg/providers/microsoft.insights/components/evt-hub-triggered-fna",
+                "hidden-link: /app-insights-instrumentation-key": "be40cb1a-473e-4caf-99bc-57597089e435",
+                "hidden-link: /app-insights-conn-string": "InstrumentationKey=be40cb1a-473e-4caf-99bc-57597089e435;IngestionEndpoint=https://polandcentral-0.in.applicationinsights.azure.com/;LiveEndpoint=https://polandcentral.livediagnostics.monitor.azure.com/"
+            },
+            "properties": {
+                "allow": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/web')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "tags": {
+                "hidden-link: /app-insights-resource-id": "/subscriptions/311d0bf6-7b5c-40ae-880d-a81a7407ebf1/resourceGroups/evt-hub-test-rg/providers/microsoft.insights/components/evt-hub-triggered-fna",
+                "hidden-link: /app-insights-instrumentation-key": "be40cb1a-473e-4caf-99bc-57597089e435",
+                "hidden-link: /app-insights-conn-string": "InstrumentationKey=be40cb1a-473e-4caf-99bc-57597089e435;IngestionEndpoint=https://polandcentral-0.in.applicationinsights.azure.com/;LiveEndpoint=https://polandcentral.livediagnostics.monitor.azure.com/"
+            },
+            "properties": {
+                "numberOfWorkers": 1,
+                "defaultDocuments": [
+                    "Default.htm",
+                    "Default.html",
+                    "Default.asp",
+                    "index.htm",
+                    "index.html",
+                    "iisstart.htm",
+                    "default.aspx",
+                    "index.php"
+                ],
+                "netFrameworkVersion": "v6.0",
+                "requestTracingEnabled": false,
+                "remoteDebuggingEnabled": false,
+                "remoteDebuggingVersion": "VS2019",
+                "httpLoggingEnabled": false,
+                "acrUseManagedIdentityCreds": false,
+                "logsDirectorySizeLimit": 35,
+                "detailedErrorLoggingEnabled": false,
+                "publishingUsername": "$evt-hub-triggered-fna",
+                "scmType": "GitHubAction",
+                "use32BitWorkerProcess": false,
+                "webSocketsEnabled": false,
+                "alwaysOn": true,
+                "managedPipelineMode": "Integrated",
+                "virtualApplications": [
+                    {
+                        "virtualPath": "/",
+                        "physicalPath": "site\\wwwroot",
+                        "preloadEnabled": true
+                    }
+                ],
+                "loadBalancing": "LeastRequests",
+                "experiments": {
+                    "rampUpRules": []
+                },
+                "autoHealEnabled": false,
+                "vnetRouteAllEnabled": false,
+                "vnetPrivatePortsCount": 0,
+                "publicNetworkAccess": "Enabled",
+                "cors": {
+                    "allowedOrigins": [
+                        "https://portal.azure.com"
+                    ],
+                    "supportCredentials": false
+                },
+                "localMySqlEnabled": false,
+                "ipSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 2147483647,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictions": [
+                    {
+                        "ipAddress": "Any",
+                        "action": "Allow",
+                        "priority": 2147483647,
+                        "name": "Allow all",
+                        "description": "Allow all access"
+                    }
+                ],
+                "scmIpSecurityRestrictionsUseMain": false,
+                "http20Enabled": false,
+                "minTlsVersion": "1.2",
+                "scmMinTlsVersion": "1.2",
+                "ftpsState": "FtpsOnly",
+                "preWarmedInstanceCount": 0,
+                "functionAppScaleLimit": 0,
+                "functionsRuntimeScaleMonitoringEnabled": false,
+                "minimumElasticInstanceCount": 0,
+                "azureStorageAccounts": {}
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/20d56bed2b3c4b1d8e06035b7c70d2fc')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"f82eca4e47fba640c9c1e2957757f8e13ccdcb7d\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-11T11:37:36.9188546Z",
+                "end_time": "2023-12-11T11:37:42.782621Z",
+                "active": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/26ad4d68d1be40ef92ca3b623c39556a')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"2955c5767236a1fcfe76c686667d7902546ef8fe\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-10T15:54:38.3035665Z",
+                "end_time": "2023-12-10T15:54:44.2588146Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/43a3a3ddc0ff47c88dedc9f822acc08c')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"02bf92b3d31cc9320f6b7f309e34735a4af198cb\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-08T15:43:49.2800156Z",
+                "end_time": "2023-12-08T15:43:57.6707762Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/47121f7465d349f6bc6d4d3b9f7a6f3b')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"eaec864d9915fb057816c6eb2e6a3fbdbad50b3d\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-08T15:57:51.9951632Z",
+                "end_time": "2023-12-08T15:57:57.4796902Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/bd2be40738784586875cf336ef8a1ff0')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"c85cb8676433979df3b1ff17c2fa4b013be8a8de\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-11T08:23:50.3536756Z",
+                "end_time": "2023-12-11T08:23:56.4068773Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/c434b4a4a8654ec6b47ae813179aca17')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"dc03d20eee6e56651a8e43cdc5b10c58ad4a4bc9\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-10T15:57:55.787755Z",
+                "end_time": "2023-12-10T15:58:01.7418142Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/e87637a2e0924397904d1c033edbfba6')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY_FUNCTIONS_V1",
+                "message": "{\"type\":\"deployment\",\"sha\":\"cc1079c458e9ed82165dea6f5bde2451f42d3653\",\"repoName\":\"piotrosz/evt-hub-triggered-fn\",\"actor\":\"piotrosz\",\"slotName\":\"production\"}",
+                "start_time": "2023-12-08T15:48:00.590199Z",
+                "end_time": "2023-12-08T15:48:05.9861246Z",
+                "active": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/functions",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/EventHubTriggeredFn')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "script_href": "https://evt-hub-triggered-fna.azurewebsites.net/admin/vfs/site/wwwroot/EventHubTriggeredIsolatedFn.dll",
+                "test_data_href": "https://evt-hub-triggered-fna.azurewebsites.net/admin/vfs/data/Functions/sampledata/EventHubTriggeredFn.dat",
+                "href": "https://evt-hub-triggered-fna.azurewebsites.net/admin/functions/EventHubTriggeredFn",
+                "config": {},
+                "language": "dotnet-isolated",
+                "isDisabled": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/hostNameBindings",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/', parameters('sites_evt_hub_triggered_fna_name'), '.azurewebsites.net')]",
+            "location": "Poland Central",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ],
+            "properties": {
+                "siteName": "evt-hub-triggered-fna",
+                "hostNameType": "Verified"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T15_45_36_4180895')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T16_45_36_4780605')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T17_45_36_5631251')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T18_45_36_6074566')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T19_45_36_6804907')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T20_45_36_7555453')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T21_45_36_7833945')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T22_45_36_8698514')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-08T23_45_36_9527330')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T00_45_37_0019324')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T01_45_37_0853406')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T02_45_37_1252100')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T03_45_37_2069191')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T04_45_37_2719646')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T05_45_37_3420416')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T06_45_37_4069251')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T07_45_37_4620021')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T08_45_37_5206429')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T09_45_37_6052874')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T10_45_37_6744483')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T11_45_37_7530675')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T12_45_37_8043973')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T13_45_37_8656621')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T14_45_37_9449008')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T15_45_38_0020110')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T16_45_38_0891430')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T17_45_38_1909349')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T18_45_38_2578801')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T19_45_38_2859524')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T20_45_38_3487716')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T21_45_38_4147987')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T22_45_38_5091058')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-09T23_45_38_5748048')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T00_45_38_6121331')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T01_45_38_6960426')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T02_45_38_7468211')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T03_45_38_7937296')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T04_45_38_8630926')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T05_45_38_9616316')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T06_45_39_0299230')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T07_45_39_0568563')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T08_45_39_1311286')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T09_45_39_1970204')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T10_45_39_2487228')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T11_45_39_3376290')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T12_45_39_3843174')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T13_45_39_4433639')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T14_45_39_5249631')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T15_45_39_5856659')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T16_45_39_6414589')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T17_45_39_7491166')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T18_45_39_7862119')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T19_45_39_8609670')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T20_45_39_9202726')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T21_45_40_0025298')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T22_45_40_0522041')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-10T23_45_40_1732816')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T00_45_40_1843887')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T01_45_40_3039986')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T02_45_40_3208436')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T03_45_40_3915075')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T04_45_40_4800227')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T05_45_40_5399895')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T06_45_40_5814316')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T07_45_40_6391619')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T08_45_40_7111134')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T09_45_40_7830747')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T10_45_40_8462326')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T11_45_40_9212667')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T12_45_40_9638912')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T13_45_41_0246885')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/snapshots",
+            "apiVersion": "2015-08-01",
+            "name": "[concat(parameters('sites_evt_hub_triggered_fna_name'), '/2023-12-11T14_45_41_1278008')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_evt_hub_triggered_fna_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs/authorizationrules",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/test-evhb/listen-policy')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('namespaces_evthubtest_name'), 'test-evhb')]",
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Listen"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('namespaces_evthubtest_name'), '/test-evhb/$Default')]",
+            "location": "polandcentral",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('namespaces_evthubtest_name'), 'test-evhb')]",
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_evthubtest_name'))]"
+            ],
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default/azure-webjobs-eventhub')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_evthubfnstorage_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default/azure-webjobs-hosts')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_evthubfnstorage_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccounts_evthubfnstorage_name'), '/default/azure-webjobs-secrets')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_evthubfnstorage_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_evthubfnstorage_name'))]"
+            ],
+            "properties": {
+                "immutableStorageWithVersioning": {
+                    "enabled": false
+                },
+                "defaultEncryptionScope": "$account-encryption-key",
+                "denyEncryptionScopeOverride": false,
+                "publicAccess": "None"
+            }
+        }
+    ]
+}

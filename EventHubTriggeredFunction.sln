@@ -7,11 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubTriggeredInProcessF
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubTriggeredIsolatedFn", "EventHubTriggeredIsolatedFn\EventHubTriggeredIsolatedFn.csproj", "{A83E014A-075A-4AD0-9BEC-A562502ECE67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventHubSender", "EventHubSender\EventHubSender.csproj", "{C7E8E736-3590-45FE-B6F2-95DE566F20E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubSender", "EventHubSender\EventHubSender.csproj", "{C7E8E736-3590-45FE-B6F2-95DE566F20E9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8F0CAC06-7C55-4AD8-B483-4D1997A23A1F}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\main_evt-hub-triggered-fna.yml = .github\workflows\main_evt-hub-triggered-fna.yml
 		README.md = README.md
 	EndProjectSection
 EndProject

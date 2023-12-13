@@ -42,6 +42,9 @@ try
 {
     // Use the producer client to send the batch of events to the event hub
     await producerClient.SendAsync(eventBatch);
+
+    //producerClient.SendAsync(new SendEventOptions() { PartitionKey = ""})
+
     Console.WriteLine(DateTime.Now.ToString("HH:mm:ss:fff"));
     Console.WriteLine($"A batch of {numOfEvents} events has been published.");
     Console.ReadLine();

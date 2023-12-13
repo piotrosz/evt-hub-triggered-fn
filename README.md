@@ -13,3 +13,11 @@ Azure functions hosting plans:
 
 https://learn.microsoft.com/en-us/azure/azure-functions/functions-scale#overview-of-plans
 
+Consumer groups (multiple only in Standard or Premium pricing tiers):
+
+```bash
+az eventhubs eventhub consumer-group create -g "evt-hub-test-rg" -n "Consumer1" --eventhub-name "test-evhb" --namespace-name "evthubtest"
+```
+
+
+

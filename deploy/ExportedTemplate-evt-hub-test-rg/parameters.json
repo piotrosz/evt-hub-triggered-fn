@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namespaces_evthubtest_name": {
+            "value": null
+        },
+        "sites_evt_hub_triggered_fna_name": {
+            "value": null
+        },
+        "serverfarms_evt_hub_fna_appplan_name": {
+            "value": null
+        },
+        "storageAccounts_evthubfnstorage_name": {
+            "value": null
+        },
+        "components_evt_hub_triggered_fna_name": {
+            "value": null
+        },
+        "smartdetectoralertrules_failure_anomalies___evt_hub_triggered_fna_name": {
+            "value": null
+        },
+        "actiongroups_application_insights_smart_detection_externalid": {
+            "value": null
+        },
+        "workspaces_DefaultWorkspace_311d0bf6_7b5c_40ae_880d_a81a7407ebf1_PLC_externalid": {
+            "value": null
+        }
+    }
+}
