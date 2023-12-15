@@ -2,8 +2,8 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "namespaces_evthubtest_name": {
-            "value": null
+      "namespaces_evthubtest_name": {
+            "value": "evthubtest"
         },
         "sites_evt_hub_triggered_fna_name": {
             "value": null

@@ -19,5 +19,11 @@ Consumer groups (multiple only in Standard or Premium pricing tiers):
 az eventhubs eventhub consumer-group create -g "evt-hub-test-rg" -n "Consumer1" --eventhub-name "test-evhb" --namespace-name "evthubtest"
 ```
 
+Deployment template:
 
+```bash
+az group create --name "evt-hub-test-rg" --location "Poland Central"
 
+az deployment group create --name ExampleDeployment --resource-group evt-hub-test-rg --template-file <path-to-template> \
+--parameters storageAccountType=Standard_GRS \
+```

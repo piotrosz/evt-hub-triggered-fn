@@ -11,7 +11,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventHubSender", "EventHubS
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8F0CAC06-7C55-4AD8-B483-4D1997A23A1F}"
 	ProjectSection(SolutionItems) = preProject
+		deploy\ExportedTemplate-evt-hub-test-rg\parameters.json = deploy\ExportedTemplate-evt-hub-test-rg\parameters.json
 		README.md = README.md
+		deploy\ExportedTemplate-evt-hub-test-rg\template.json = deploy\ExportedTemplate-evt-hub-test-rg\template.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{4C18F8EC-3B60-49E5-A74C-13B7A030292A}"
+	ProjectSection(SolutionItems) = preProject
+		deploy\ExportedTemplate-evt-hub-test-rg\parameters.json = deploy\ExportedTemplate-evt-hub-test-rg\parameters.json
+		deploy\ExportedTemplate-evt-hub-test-rg\template.json = deploy\ExportedTemplate-evt-hub-test-rg\template.json
 	EndProjectSection
 EndProject
 Global
@@ -35,6 +43,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4C18F8EC-3B60-49E5-A74C-13B7A030292A} = {8F0CAC06-7C55-4AD8-B483-4D1997A23A1F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3CBD8AB1-F5A6-4F24-9239-FC8DED5AD31A}
